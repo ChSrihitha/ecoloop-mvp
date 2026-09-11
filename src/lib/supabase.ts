@@ -1,0 +1,3 @@
+import { createClient } from '@supabase/supabase-js';
+export const supabase = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY ? createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY) : null;
+export async function uploadEwasteImage(file:File){if(!supabase)return undefined;const path=`demo/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'-')}`;const {error}=await supabase.storage.from('ewaste-images').upload(path,file,{upsert:false});if(error)return undefined;const {data}=supabase.storage.from('ewaste-images').getPublicUrl(path);return data.publicUrl}
