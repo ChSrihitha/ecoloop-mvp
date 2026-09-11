@@ -4,6 +4,7 @@ const sharedKey='ecoloop-all-records';
 export interface Store{items:EwasteItem[];pickups:Pickup[];certificates:Certificate[]}
 export type Role='user'|'recycler';
 export interface UserProfile{id:string;name:string;email:string;mobile?:string;role:Role}
+export function getEstimatedReward(itemType:string):number{const map:Record<string,number>={Smartphone:300,Laptop:800,Tablet:400,'Monitor/TV':500,Monitor:500,Television:500,Printer:250};return map[itemType]||200}
 const empty:Store={items:[],pickups:[],certificates:[]};
 function scope(userId?:string){return (userId||guestId).trim().toLowerCase().replace(/[^a-z0-9_-]/g,'_')||guestId}
 function storeKey(userId?:string){return `ecoloop-store-${scope(userId)}`}
