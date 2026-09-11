@@ -1,5 +1,7 @@
-import type {Analysis} from './types'; import {fallbackAnalysis} from './demoData';
-export async function analyzeEwaste(input:{itemType:string;condition:string;battery:string;imageContext?:string}):Promise<Analysis>{
- try{const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});if(r.ok)return await r.json()}catch{}
- return fallbackAnalysis(input.itemType,input.condition,input.battery)
-}
+import type {Analysis} from './types';
+import {fallbackAnalysis} from './demoData';
+
+export interface AnalysisRequest{itemType:string;condition:string;battery:string;quantity?:number;imageUrl:string}
+export interface AnalysisResult{category:string;riskLevel:'Low'|'Medium'|'High';handlingPrecautions:string[];disposalRecommendation:string;batteryStatusConfirmed:string;isImageGrounded?:boolean;demoSimulated?:boolean;deviceAssessment:string;recoverableMaterials:string[];hazardWarnings:string[];environmentalImpactInsight:string;visualObservations:string[]}
+
+export async function analyzeEwaste(input:AnalysisRequest):Promise<Analysis>{try{const response=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});if(!response.ok)throw new Error(`Analysis request failed: ${response.status}`);const result=await response.json() as AnalysisResult;return {category:result.category,riskLevel:result.riskLevel,batteryHandling:result.handlingPrecautions.join(' '),disposalRecommendation:result.disposalRecommendation,safetyGuidance:result.handlingPrecautions.join(' '),reasoning:result.batteryStatusConfirmed,isImageGrounded:result.isImageGrounded===true,demoSimulated:result.demoSimulated===true,deviceAssessment:result.deviceAssessment,recoverableMaterials:result.recoverableMaterials,hazardWarnings:result.hazardWarnings,handlingPrecautions:result.handlingPrecautions,environmentalImpactInsight:result.environmentalImpactInsight,visualObservations:result.visualObservations}}catch{const fallback=fallbackAnalysis(input.itemType,input.condition,input.battery);return {...fallback,isImageGrounded:false,demoSimulated:false,deviceAssessment:'No visual assessment is available. The guidance below is based on the information you reported.',recoverableMaterials:[],hazardWarnings:[],handlingPrecautions:[],environmentalImpactInsight:'No image-grounded recovery insight is available.',visualObservations:[],reasoning:`${fallback.reasoning} Safe heuristic guidance is shown because image analysis was unavailable.`}}}

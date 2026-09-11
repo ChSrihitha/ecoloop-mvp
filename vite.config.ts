@@ -1,2 +1,7 @@
-import { defineConfig } from 'vite'; import react from '@vitejs/plugin-react';
-export default defineConfig({ plugins:[react()] });
+import {defineConfig,loadEnv,type Plugin} from 'vite';
+import react from '@vitejs/plugin-react';
+import analyzeHandler from './api/analyze';
+
+function analyzeDevApi(mode:string):Plugin{return {name:'ecoloop-analyze-api',configureServer(server){const env=loadEnv(mode,process.cwd(),'');const apiKey=env.OPENAI_API_KEY?.trim();if(!apiKey)console.error('[api/analyze] OPENAI_API_KEY is missing. Add it to .env.local before using image analysis.');else process.env.OPENAI_API_KEY=apiKey;if(env.OPENAI_MODEL)process.env.OPENAI_MODEL=env.OPENAI_MODEL;server.middlewares.use('/api/analyze',async(req:any,res:any,next:any)=>{if(req.method!=='POST')return next();try{const chunks:Buffer[]=[];for await(const chunk of req)chunks.push(Buffer.from(chunk));const raw=Buffer.concat(chunks).toString('utf8');req.body=raw?JSON.parse(raw):{};res.statusCode=200;(res as any).status=(code:number)=>{res.statusCode=code;return res};(res as any).json=(payload:any)=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify(payload));return res};await analyzeHandler(req,res);if(!res.writableEnded)res.end()}catch(error){console.error('[api/analyze] Local vision request failed. Check OPENAI_API_KEY and image URL accessibility.',error);if(!res.writableEnded){res.statusCode=500;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({error:'Local image analysis failed'}))}}})}}}
+
+export default defineConfig(({mode})=>({plugins:[react(),analyzeDevApi(mode)]}));
